@@ -1,0 +1,6 @@
+Nomprocessus    DateArrive  DureeExecution  DateDebutIO DureeIO Priorite
+P1	210	35	20	70	2
+P2	220	25	-1	-1	4
+P3	225	55	-1	-1	3
+P4	235	35	12	30	3
+P5	240	25	-1	-1	1
