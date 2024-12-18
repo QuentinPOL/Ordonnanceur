@@ -23,13 +23,13 @@ class Dispatcher {
         File selectedFile;
         switch (fileChoice) {
             case 1:
-                selectedFile = new File("C:\\Users\\Quent\\Documents\\UniLaSalle\\TP-I3_FISA-main\\files\\processus_1.txt");
+                selectedFile = new File("C:\\Users\\Quent\\Documents\\UniLaSallee\\I3-FISA-RIOC\\Système informatique\\Quentin\\Ordonnanceur\\files\\processus_1.txt");
                 break;
             case 2:
-                selectedFile = new File("C:\\Users\\Quent\\Documents\\UniLaSalle\\TP-I3_FISA-main\\files\\processus_2.txt");
+                selectedFile = new File("C:\\Users\\Quent\\Documents\\UniLaSallee\\I3-FISA-RIOC\\Système informatique\\Quentin\\Ordonnanceur\\files\\processus_2.txt");
                 break;
             case 3:
-                selectedFile = new File("C:\\Users\\Quent\\Documents\\UniLaSalle\\TP-I3_FISA-main\\files\\processus_TD.txt");
+                selectedFile = new File("C:\\Users\\Quent\\Documents\\UniLaSallee\\I3-FISA-RIOC\\Système informatique\\Quentin\\Ordonnanceur\\files\\processus_TD.txt");
                 break;
             default:
                 System.out.println("Choix invalide. Fin du programme.");
@@ -71,6 +71,153 @@ class Dispatcher {
     }
 
     private static void ordonnancementFIFOWithoutIONoPriority(Processus[] processusTableau, IOCommandes ecran) {
+        int nbProcessus = processusTableau.length;
+
+        // Initialisation : choisir le processus avec l'heure d'arrivée minimale
+        int startTime = 0;
+        if (nbProcessus > 0) {
+            float minArrive = Float.MAX_VALUE;
+            for (Processus p : processusTableau) {
+                if (p.getArrive_t() < minArrive) {
+                    minArrive = p.getArrive_t();
+                }
+            }
+
+            List<Processus> candidats = new ArrayList<>();
+            for (Processus p : processusTableau) {
+                if (p.getArrive_t() == minArrive) {
+                    candidats.add(p);
+                }
+            }
+
+            Processus premier = candidats.get(0); // Le premier arrivé
+            premier.setActif(false);
+            premier.setStateProcString("a");
+            minArrive = premier.getArrive_t();
+            premier.setArrived(true);
+            startTime = (int) minArrive;
+        }
+
+        // Affichage des informations initiales
+        for (Processus p : processusTableau) {
+            System.out.println(p.toString());
+        }
+
+        // Détermination de la largeur de colonne pour un joli tableau
+        int maxNameLength = 1;
+        for (Processus p : processusTableau) {
+            if (p.getNameProc().length() > maxNameLength) {
+                maxNameLength = p.getNameProc().length();
+            }
+        }
+
+        int stateLength = 8;
+        int columnWidth = Math.max(maxNameLength, stateLength) + 2;
+
+        StringBuilder header = new StringBuilder();
+        header.append(String.format("%-" + columnWidth + "s", "X"));
+        for (Processus p : processusTableau) {
+            header.append(String.format("%-" + columnWidth + "s", p.getNameProc()));
+        }
+
+        String outputFileName = "etat_processus_fifo_basique.txt";
+
+        try {
+            new File(outputFileName).delete();
+            new File(outputFileName).createNewFile();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        ecran.ecrireFile(outputFileName, header.toString());
+
+        String previousBaseLine = null;
+        String[] previousStates = new String[processusTableau.length];
+        Arrays.fill(previousStates, "");
+
+        int ts = startTime;
+        while (!allProcessesFinished(processusTableau) && ts < startTime + 300) {
+            String oldLine = buildStateLine(processusTableau, ts, columnWidth, previousStates);
+
+            // Activer les processus arrivés à ce temps
+            for (Processus p : processusTableau) {
+                if (p.getArrive_t() == ts && !p.isArrived()) {
+                    p.setArrived(true);
+                    if (!p.isFinished()) {
+                        p.setStateProcString("a");
+                    }
+                }
+            }
+
+            // Trouver un processus actif ou en démarrer un si nécessaire
+            Processus actif = null;
+            for (Processus p : processusTableau) {
+                if (p.isActif()) {
+                    actif = p;
+                    break;
+                }
+            }
+
+            // Si aucun processus n'est actif, chercher le premier processus prêt
+            if (actif == null) {
+                for (Processus p : processusTableau) {
+                    if (!p.isFinished() && p.isArrived()) {
+                        actif = p;
+                        break;
+                    }
+                }
+
+                if (actif != null) {
+                    actif.setActif(true);
+                    actif.setStateProcString("A"); // Initialisation correcte avec le temps exécuté
+                }
+            }
+
+            // Exécuter le processus actif
+            if (actif != null) {
+                int executedTime = (int) (actif.getTotal_t() - actif.getRemain_t());
+
+                if (actif.getRemain_t() == 0) {
+                    actif.setActif(false);
+                    actif.setFinished(true);
+                    actif.setStateProcString("X");
+
+                    // Recherche immédiate d'un autre processus prêt à être exécuté
+                    Processus suivant = null;
+                    for (Processus p : processusTableau) {
+                        if (!p.isFinished() && p.isArrived()) {
+                            suivant = p;
+                            break;
+                        }
+                    }
+
+                    if (suivant != null) {
+                        suivant.setActif(true);
+                        suivant.setStateProcString("A");
+                        continue; // Recommencer la boucle pour exécuter immédiatement le processus suivant
+                    }
+                }
+            }
+
+            String fullLine = buildStateLine(processusTableau, ts, columnWidth, previousStates);
+
+            if (previousBaseLine == null || !fullLine.equals(previousBaseLine) || ts % 10 == 0) {
+                ecran.ecrireFile(outputFileName, fullLine);
+                previousBaseLine = fullLine;
+            }
+
+
+            ts++;
+
+            actif.oneTimeSlice();
+        }
+
+        File etatFichier = new File(outputFileName);
+        String statesData = ecran.lireFile(etatFichier);
+        System.out.println("\n=== Tableau des états (relu depuis le fichier) ===");
+        System.out.print(statesData);
+
+        System.out.println("\nOrdonnancement FIFO terminé.");
     }
 
     private static void ordonnancementIOPriority(Processus[] processusTableau, IOCommandes ecran) {
@@ -142,7 +289,7 @@ class Dispatcher {
             header.append(String.format("%-" + columnWidth + "s", p.getNameProc()));
         }
 
-        String outputFileName = "etat_processus.txt";
+        String outputFileName = "etat_processus_fifo_prio_io.txt";
 
         // Réinitialisation du fichier
         try {

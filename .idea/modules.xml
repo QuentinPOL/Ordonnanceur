@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/TP-I3_FISA-main.iml" filepath="$PROJECT_DIR$/TP-I3_FISA-main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Ordonnanceur.iml" filepath="$PROJECT_DIR$/Ordonnanceur.iml" />
     </modules>
   </component>
 </project>
