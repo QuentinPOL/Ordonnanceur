@@ -1,17 +1,79 @@
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 
 class Dispatcher {
 
-	public static void main(String[] args) {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
         IOCommandes ecran = new IOCommandes();
-        File fichier = new File("files/processus_TD.txt");
-        String data = ecran.lireFile(fichier);
+
+        // Étape 1 : Sélectionner un fichier parmi les trois fichiers disponibles
+        System.out.println("Veuillez sélectionner un fichier parmi les suivants :");
+        System.out.println("1. processus_1.txt");
+        System.out.println("2. processus_2.txt");
+        System.out.println("3. processus_TD.txt");
+
+        System.out.print("Entrez le numéro de votre choix : ");
+        int fileChoice = scanner.nextInt();
+        scanner.nextLine(); // Consommer la nouvelle ligne restante
+
+        File selectedFile;
+        switch (fileChoice) {
+            case 1:
+                selectedFile = new File("C:\\Users\\Quent\\Documents\\UniLaSalle\\TP-I3_FISA-main\\files\\processus_1.txt");
+                break;
+            case 2:
+                selectedFile = new File("C:\\Users\\Quent\\Documents\\UniLaSalle\\TP-I3_FISA-main\\files\\processus_2.txt");
+                break;
+            case 3:
+                selectedFile = new File("C:\\Users\\Quent\\Documents\\UniLaSalle\\TP-I3_FISA-main\\files\\processus_TD.txt");
+                break;
+            default:
+                System.out.println("Choix invalide. Fin du programme.");
+                return;
+        }
+
+        String data = ecran.lireFile(selectedFile);
         ecran.afficheProcess(data);
 
-        // Transformation du contenu en tableau de Processus
         Processus[] processusTableau = ecran.tableProcess(data);
+
+        // Étape 2 : Sélectionner un type d'ordonnancement
+        System.out.println("Veuillez sélectionner un type d'ordonnancement :");
+        System.out.println("1. Ordonnancement FIFO sans I/O sans priorité (basique)"); // Fini (a implementer
+        System.out.println("2. Ordonnancement FIFO par priorité avec I/O préemption"); // Fini
+        System.out.println("3. Ordonnancement Round-Robin avec I/O sans priorité"); // Fini (a implementer)
+        System.out.println("4. Ordonnancement Round-Robin avec I/O avec priorité préemption"); // Manque lui
+
+        System.out.print("Entrez le numéro de votre choix : ");
+        int schedulingChoice = scanner.nextInt();
+        scanner.nextLine(); // Consommer la nouvelle ligne restante
+
+        switch (schedulingChoice) {
+            case 1:
+                ordonnancementFIFOWithoutIONoPriority(processusTableau, ecran);
+                break;
+            case 2:
+                ordonnancementIOPriority(processusTableau, ecran);
+                break;
+            case 3:
+                ordonnancementRoundRobinWithIONoPriority(processusTableau, ecran);
+                break;
+            case 4:
+                ordonnancementRoundRobinWithIOPriority(processusTableau, ecran);
+                break;
+            default:
+                System.out.println("Choix d'ordonnancement invalide. Fin du programme.");
+        }
+    }
+
+    private static void ordonnancementFIFOWithoutIONoPriority(Processus[] processusTableau, IOCommandes ecran) {
+    }
+
+    private static void ordonnancementIOPriority(Processus[] processusTableau, IOCommandes ecran) {
         int nbProcessus = processusTableau.length;
 
         // Initialisation : choisir le processus prioritaire à l'heure d'arrivée minimale
@@ -53,7 +115,6 @@ class Dispatcher {
                 }
             }
             startTime = (int) minArrive;
-
         }
 
         // Affichage des informations initiales
@@ -68,13 +129,14 @@ class Dispatcher {
                 maxNameLength = p.getNameProc().length();
             }
         }
+
         // Les états seront du type A(1234), max ~ 7-8 caractères
         int stateLength = 8;
         int columnWidth = Math.max(maxNameLength, stateLength) + 2; // 2 espaces de marge
 
         // Préparation de l'en-tête du tableau : "X" + noms des processus
         StringBuilder header = new StringBuilder();
-        // La première colonne sera "X" (pour le temps)
+
         header.append(String.format("%-" + columnWidth + "s", "X"));
         for (Processus p : processusTableau) {
             header.append(String.format("%-" + columnWidth + "s", p.getNameProc()));
@@ -93,14 +155,15 @@ class Dispatcher {
         // Ecriture de l'en-tête dans le fichier
         ecran.ecrireFile(outputFileName, header.toString());
 
-		String previousBaseLine = null; // Conserver la baseLine précédente
+        String previousBaseLine = null; // Conserver la baseLine précédente
+        String[] previousStates = new String[processusTableau.length];
+        Arrays.fill(previousStates, ""); // États initiaux vides
 
         int ts = startTime;
         while (!allProcessesFinished(processusTableau) && ts < startTime + 300) {
-            // Sauvegarder l'ancien état avant mise à jour (si on veut détecter les changements)
-            String oldLine = buildStateLine(processusTableau, ts, columnWidth);
+            // Sauvegarder l'ancien état avant mise à jour
+            String oldLine = buildStateLine(processusTableau, ts, columnWidth, previousStates);
 
-            // Mise à jour de l'état des processus
             for (Processus p : processusTableau) {
                 if (p.isActif() && p.getRemain_t() > 0) {
                     p.oneTimeSlice();
@@ -119,14 +182,13 @@ class Dispatcher {
                     }
                 }
 
-                // Si on arrive au temps d'I/O
-                if (!p.isFinished() && !p.isBlocked() && (p.getTotal_t() - p.getRemain_t()) == p.getIoAt_t() && p.getIoLastF_t() != 0) {
+                if (!p.isFinished() && !p.isBlocked() &&
+                        (p.getTotal_t() - p.getRemain_t()) == p.getIoAt_t() && p.getIoLastF_t() != 0) {
                     p.setActif(false);
                     p.setBlocked(true);
                     p.setStateProcString("B");
                 }
 
-                // Nouveau processus qui arrive
                 if (p.getArrive_t() == ts && !p.isArrived()) {
                     p.setArrived(true);
                     if (!p.isFinished() && !p.isBlocked() && !p.isActif()) {
@@ -135,7 +197,6 @@ class Dispatcher {
                 }
             }
 
-            // Choix du processus le plus prioritaire
             Processus plusImportant2 = null;
             int plusFaiblePriorite = Integer.MAX_VALUE;
             for (Processus p : processusTableau) {
@@ -148,7 +209,6 @@ class Dispatcher {
             }
 
             if (plusImportant2 != null) {
-                // Désactiver les autres processus actifs
                 for (Processus p : processusTableau) {
                     if (p != plusImportant2 && p.isActif()) {
                         p.setActif(false);
@@ -162,55 +222,60 @@ class Dispatcher {
                 plusImportant2.setArrived(true);
             }
 
-			// Construction de baseLine (sans temps)
-            StringBuilder baseLineBuilder = new StringBuilder();
-            for (Processus p : processusTableau) {
-                String stateStr = p.getStateProcString();
-                baseLineBuilder.append(stateStr);
-                baseLineBuilder.append(" "); // un espace pour séparer
-            }
-            String baseLine = baseLineBuilder.toString();
+            String fullLine = buildStateLine(processusTableau, ts, columnWidth, previousStates);
 
-// Construction de la fullLine (avec ts et temps d'exécution)
-            String fullLine = buildStateLine(processusTableau, ts, columnWidth);
-
-// Comparaison des baseLines pour détecter les changements
-            if (previousBaseLine == null || !baseLine.equals(previousBaseLine) || ts%10==0) {
+            if (previousBaseLine == null || !fullLine.equals(previousBaseLine) || ts % 10 == 0) {
                 ecran.ecrireFile(outputFileName, fullLine);
-                previousBaseLine = baseLine;
+                previousBaseLine = fullLine;
             }
             ts++;
         }
 
-        // Affichage final des objets
         for (Processus p : processusTableau) {
             System.out.println(p.toString());
         }
 
-        // Maintenant, on relit le fichier etat_processus.txt et on l'affiche sous forme de tableau
         File etatFichier = new File(outputFileName);
         String statesData = ecran.lireFile(etatFichier);
         System.out.println("\n=== Tableau des états (relu depuis le fichier) ===");
         System.out.print(statesData);
+
+        System.out.println("\nOrdonnancement par priorité terminé.");
     }
 
-	/**
-	 * Construit la ligne d'état formatée pour un temps donné ts.
-	 * @param processusTableau tableau des processus
-	 * @param ts le temps courant
-	 * @param columnWidth la largeur de chaque colonne
-	 * @return une ligne formatée
-	 */
-	private static String buildStateLine(Processus[] processusTableau, int ts, int columnWidth) {
-		StringBuilder fullLineBuilder = new StringBuilder();
-		fullLineBuilder.append(String.format("%-" + columnWidth + "s", String.valueOf(ts)));
-		for (Processus p : processusTableau) {
-			int executedTime = (int) (p.getTotal_t() - p.getRemain_t());
-			String stateStr = p.getStateProcString() + "(" + executedTime + ")";
-			fullLineBuilder.append(String.format("%-" + columnWidth + "s", stateStr));
-		}
-		return fullLineBuilder.toString();
-	}
+    private static void ordonnancementRoundRobinWithIONoPriority(Processus[] processusTableau, IOCommandes ecran) {
+    }
+
+    private static void ordonnancementRoundRobinWithIOPriority(Processus[] processusTableau, IOCommandes ecran) {
+    }
+
+    private static String buildStateLine(Processus[] processusTableau, int ts, int columnWidth, String[] previousStates) {
+        StringBuilder fullLineBuilder = new StringBuilder();
+        fullLineBuilder.append(String.format("%-" + columnWidth + "s", String.valueOf(ts)));
+        for (int i = 0; i < processusTableau.length; i++) {
+            Processus p = processusTableau[i];
+            String stateStr;
+            if (p.isFinished()) {
+                stateStr = p.getStateProcString(); // "X" pour les processus terminés
+            } else if (p.getStateProcString().equals("A") && previousStates[i].equals("a")) {
+                stateStr = "a->A(0)"; // Transition de a à A(0)
+            } else if (p.getStateProcString().equals("a")) {
+                stateStr = "a"; // Toujours afficher "a" seul
+            } else if (p.isBlocked() && previousStates[i].equals("A")) {
+                stateStr = "A->B(0)"; // Transition vers B(0)
+            } else {
+                int executedTime = (int) (p.getTotal_t() - p.getRemain_t());
+                stateStr = p.getStateProcString() + "(" + executedTime + ")"; // État + temps exécuté
+            }
+
+            // Mettre à jour l'état précédent
+            previousStates[i] = p.getStateProcString();
+
+            fullLineBuilder.append(String.format("%-" + columnWidth + "s", stateStr));
+        }
+        return fullLineBuilder.toString();
+    }
+
     private static boolean allProcessesFinished(Processus[] processusTableau) {
         for (Processus p : processusTableau) {
             if (!p.isFinished()) {
@@ -219,5 +284,4 @@ class Dispatcher {
         }
         return true;
     }
-
 }
