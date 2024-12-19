@@ -16,6 +16,7 @@ class RoundRobin {
         int nbProcessus = processusTableau.length;
 
         // Initialisation : choisir le processus prioritaire à l'heure d'arrivée minimale
+
         int startTime = 0;
         if (nbProcessus > 0) {
             float minArrive = Float.MAX_VALUE;
@@ -45,10 +46,10 @@ class RoundRobin {
                 plusImportant.setActif(false);
                 plusImportant.setStateProcString("a");
                 minArrive = plusImportant.getArrive_t();
-                plusImportant.setArrived(true);
+                //plusImportant.setArrived(true);
                 for (Processus p : candidats) {
                     if (p != plusImportant && p.getArrive_t() == plusImportant.getArrive_t()) {
-                        p.setArrived(true);
+                        //p.setArrived(true);
                         p.setStateProcString("a");
                     }
                 }
@@ -98,14 +99,14 @@ class RoundRobin {
 
         int ts = startTime;
         boolean preemptive = true;
-        String algorithm = "RR"; // "PRIORITY" ou "RR"
-        int quantum = 5;
-        int quantumCounter = 0;
-        Queue<Processus> readyQueue = new LinkedList<>();
+        String algorithm = "RR"; // On reste en RR
+        int maxSteps = 10; // Le processus doit rester 10 pas d'affilée
+        int quantumCounter = 0; // Compteur de pas pour le processus courant
+        LinkedList<Processus> readyQueue = new LinkedList<>();
 
-// Initialisation: ajouter les processus arrivés au début dans la file
+        // Initialisation: ajouter les processus déjà arrivés au début
         for (Processus p : processusTableau) {
-            if (p.isArrived()) {
+            if (p.isArrived() && !p.isFinished() && !p.isBlocked()) {
                 readyQueue.add(p);
             }
         }
@@ -113,13 +114,16 @@ class RoundRobin {
         Processus currentProcess = null;
 
         while (!allProcessesFinished(processusTableau) && ts < startTime + 300) {
-
+            boolean arrivalHappened = false;
+            if (ts==225)
+                arrivalHappened = false;
             // Gérer l'arrivée de nouveaux processus
             for (Processus p : processusTableau) {
-                if (p.getArrive_t() == ts && !p.isArrived()) {
+                if ((int)p.getArrive_t() == ts && !p.isArrived()) {
                     p.setArrived(true);
                     p.setStateProcString("a");
                     readyQueue.add(p);
+                    arrivalHappened = true;
                 }
             }
 
@@ -130,24 +134,16 @@ class RoundRobin {
                     if (p.getIoLastF_t() == 0) {
                         p.setBlocked(false);
                         p.setStateProcString("a");
-                        readyQueue.add(p);
-                    }
-                }
-            }
+                        readyQueue.add(p); // Ajouter à la fin
 
-            // Sélection du processus courant si aucun n’est en cours
-            if (currentProcess == null) {
-                if (!readyQueue.isEmpty()) {
-                    currentProcess = readyQueue.poll();
-                    currentProcess.setActif(true);
-                    currentProcess.setStateProcString("A");
-                    quantumCounter = 0; // réinitialiser le quantum pour ce processus
+                        arrivalHappened = true; // Un processus vient de redevenir disponible
+                    }
                 }
             }
 
             // Exécution du processus courant
             if (currentProcess != null && currentProcess.isActif()) {
-                // Exécuter une unité de temps
+                // Exécuter une unité de temps (un pas)
                 currentProcess.oneTimeSlice();
                 quantumCounter++;
 
@@ -156,7 +152,8 @@ class RoundRobin {
                     currentProcess.setFinished(true);
                     currentProcess.setActif(false);
                     currentProcess.setStateProcString("X");
-                    currentProcess = null; // On reprendront un autre à la prochaine itération
+                    currentProcess = null;
+                    quantumCounter = 0;
                 } else {
                     // Si c'est le temps d’I/O
                     if ((currentProcess.getTotal_t() - currentProcess.getRemain_t()) == currentProcess.getIoAt_t() && currentProcess.getIoLastF_t() != 0) {
@@ -164,34 +161,60 @@ class RoundRobin {
                         currentProcess.setBlocked(true);
                         currentProcess.setStateProcString("B");
                         currentProcess = null;
+                        quantumCounter = 0;
                     } else {
-                        // Vérifier le quantum si RR préemptif
-                        if (algorithm.equals("RR") && preemptive) {
-                            if (quantumCounter == quantum && !currentProcess.isFinished() && !currentProcess.isBlocked()) {
-                                // Quantum expiré, réinsérer à la fin de la file
-                                currentProcess.setActif(false);
-                                currentProcess.setStateProcString("a");
-                                readyQueue.add(currentProcess);
-                                currentProcess = null;
-                            }
+                        // Si le quantum de pas est atteint
+                        if (quantumCounter == maxSteps && !currentProcess.isFinished() && !currentProcess.isBlocked()) {
+                            // Quantum expiré, réinsérer à la fin de la file
+                            currentProcess.setActif(false);
+                            currentProcess.setStateProcString("a");
+                            readyQueue.add(currentProcess); // Remettre à la fin de la file
+                            currentProcess = null;
+                            quantumCounter = 0;
                         }
                     }
                 }
+
+
             }
 
+            // Si un processus est en cours, mais qu'un nouvel arrivant est arrivé, on préempte immédiatement
+            // (si preemptive = true et algorithm = "RR")
+            /*
+            if (currentProcess != null && arrivalHappened && preemptive && algorithm.equals("RR")) {
+                // Préemption immédiate
+                currentProcess.setActif(false);
+                if (!currentProcess.isFinished() && !currentProcess.isBlocked()) {
+                    currentProcess.setStateProcString("a");
+                    readyQueue.add(currentProcess);
+                }
+                currentProcess = null;
+                quantumCounter = 0;
+            }*/
+
+            // Sélection du processus courant si aucun n’est en cours
+
+            if (currentProcess == null) {
+                if (!readyQueue.isEmpty()) {
+                    currentProcess = readyQueue.poll();
+                    currentProcess.setActif(true);
+                    currentProcess.setStateProcString("A");
+                    quantumCounter = 0; // réinitialiser le quantum pour ce processus
+                }
+            }
             // Construction de baseLine (sans temps)
             StringBuilder baseLineBuilder = new StringBuilder();
             for (Processus p : processusTableau) {
                 String stateStr = p.getStateProcString();
                 baseLineBuilder.append(stateStr);
-                baseLineBuilder.append(" "); // un espace pour séparer
+                baseLineBuilder.append(" ");
             }
             String baseLine = baseLineBuilder.toString();
 
-// Construction de la fullLine (avec ts et temps d'exécution)
+            // Construction de la fullLine (avec ts et temps d'exécution)
             String fullLine = buildStateLine(processusTableau, ts, columnWidth);
 
-// Comparaison des baseLines pour détecter les changements
+            // Comparaison des baseLines pour détecter les changements
             if (previousBaseLine == null || !baseLine.equals(previousBaseLine) || ts%10==0) {
                 ecran.ecrireFile(outputFileName, fullLine);
                 previousBaseLine = baseLine;
@@ -229,6 +252,7 @@ class RoundRobin {
         }
         return fullLineBuilder.toString();
     }
+
     private static boolean allProcessesFinished(Processus[] processusTableau) {
         for (Processus p : processusTableau) {
             if (!p.isFinished()) {
