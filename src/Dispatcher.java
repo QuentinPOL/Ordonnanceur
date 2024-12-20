@@ -357,7 +357,6 @@ class Dispatcher {
                         p.setActif(false);
                         if (!p.isFinished() && !p.isBlocked()) {
                             p.setStateProcString("a");
-                            p.setDesactive(true);
                         }
                     }
                 }
@@ -517,7 +516,6 @@ class Dispatcher {
                     } else {
                         if (quantumCounter == maxSteps && !currentProcess.isFinished() && !currentProcess.isBlocked()) {
                             currentProcess.setActif(false);
-                            currentProcess.setDesactive(true);
                             currentProcess.setStateProcString("a");
                             readyQueue.add(currentProcess);
                             currentProcess = null;
@@ -658,7 +656,6 @@ class Dispatcher {
                     if (p.getIoLastF_t() == 0) {
                         p.setBlocked(false);
                         p.setStateProcString("a");
-                        p.setDesactive(false);
                         priorityQueues.computeIfAbsent(p.getPriority_l(), k -> new LinkedList<>()).add(p);
                     }
                 }
@@ -685,7 +682,6 @@ class Dispatcher {
                     } else {
                         if (quantumCounter == maxSteps && !currentProcess.isFinished() && !currentProcess.isBlocked()) {
                             currentProcess.setActif(false);
-                            currentProcess.setDesactive(true);
                             currentProcess.setStateProcString("a");
                             priorityQueues.get(currentProcess.getPriority_l()).add(currentProcess);
                             currentProcess = null;
@@ -726,29 +722,31 @@ class Dispatcher {
             Processus p = processusTableau[i];
             int executedTime = (int) (p.getTotal_t() - p.getRemain_t());
             String stateStr;
-            if (p.isFinished() && !p.isFinishedAff()) {
+            if (p.isFinished() && previousStates[i].equals("A")) {
                 stateStr = "A("  + executedTime + ")->" + p.getStateProcString();
-                p.setFinishedAff(true);
             } else if (p.isFinished()) {
                 stateStr = p.getStateProcString();
             /*}else if (p.getStateProcString().equals("A") && previousStates[i].equals("a")) {
                 stateStr = "a->A(0)";
             }*/
-            }else if (p.getStateProcString().equals("a") && p.isDesactive()) {
+            }else if (p.getStateProcString().equals("a") && previousStates[i].equals("A")) {
                 stateStr = "A(" + executedTime + ")->a";
-                p.setDesactive(false);
+            } else if (p.isBlocked() && previousStates[i].equals("A")) {
+                stateStr = "A(" + executedTime + ")->B(" + p.getIoLastF_t() + ")";
+            } else if (p.isBlocked()) {
+                stateStr = "B(" + p.getIoLastF_t() + ")";
+            }else if (p.getStateProcString().equals("a") && previousStates[i].equals("B")) {
+                stateStr = "B->a(" + executedTime + ")";
             }else if (p.getStateProcString().equals("A") && previousStates[i].equals("B")) {
                 stateStr = "B->A(" + executedTime + ")";
             }else if (p.getStateProcString().equals("A") && previousStates[i].equals("a")) {
                 stateStr = "a->A(" + executedTime + ")";
             } else if (p.getStateProcString().equals("a")) {
                 stateStr = "a";
-            } else if (p.isBlocked() && previousStates[i].equals("A")) {
-                stateStr = "A(" + executedTime + ")->B(" + p.getIoLastF_t() + ")";
-            } else if (p.isBlocked()) {
-                stateStr = "B(" + p.getIoLastF_t() + ")";
-            } else {
+            } else if (p.isArrived()) {
                 stateStr = p.getStateProcString() + "(" + executedTime + ")";
+            }else {
+                stateStr = "_";
             }
 
             previousStates[i] = p.getStateProcString();
