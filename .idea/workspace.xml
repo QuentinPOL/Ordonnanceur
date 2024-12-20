@@ -4,12 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b52f5e41-f00f-4d5e-84a1-18c08ff071c3" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Ordonnanceur.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+    <list default="true" id="f492ef48-1d95-4afd-b8c7-508becf5ea8e" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/etat_processus_fifo_basique.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/etat_processus_fifo_prio_io.txt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Dispatcher.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/Dispatcher.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -20,22 +19,10 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "QuentinPOL"
-  }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/QuentinPOL/Ordonnanceur",
-    "accountId": "f14171d7-0ba2-4c3a-a19b-04168fdfaadf"
-  }
-}]]></component>
   <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 2
+  "associatedIndex": 5
 }]]></component>
-  <component name="ProjectId" id="2qOvuyxODhHUxkeaAOunTvpuIGi" />
+  <component name="ProjectId" id="2qTXs68ZW2ZYweFHpgyuexT9TdR" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -44,12 +31,10 @@
   "keyToString": {
     "Application.Dispatcher.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/Quent/Documents/UniLaSallee/I3-FISA-RIOC/Système informatique/Quentin/Ordonnanceur",
+    "last_opened_file_path": "C:/Users/pollet_q/Documents/Ordonnanceur",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -61,20 +46,20 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-fdfe4dae3a2d-intellij.indexing.shared.core-IU-243.21565.193" />
-        <option value="bundled-js-predefined-d6986cc7102b-e768b9ed790e-JavaScript-IU-243.21565.193" />
+        <option value="bundled-jdk-9823dce3aa75-b114ca120d71-intellij.indexing.shared.core-IU-242.20224.387" />
+        <option value="bundled-js-predefined-d6986cc7102b-410509235cf1-JavaScript-IU-242.20224.387" />
       </set>
     </attachedChunks>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="b52f5e41-f00f-4d5e-84a1-18c08ff071c3" name="Changes" comment="" />
-      <created>1734546663054</created>
+      <changelist id="f492ef48-1d95-4afd-b8c7-508becf5ea8e" name="Changes" comment="" />
+      <created>1734687744125</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1734546663054</updated>
-      <workItem from="1734546663792" duration="7436000" />
+      <updated>1734687744125</updated>
+      <workItem from="1734687745017" duration="5526000" />
     </task>
     <servers />
   </component>
