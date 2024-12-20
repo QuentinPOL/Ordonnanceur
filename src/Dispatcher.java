@@ -105,7 +105,7 @@ class Dispatcher {
             }
 
             // Le premier arrivé
-            Processus premier = candidats.get(0);
+            Processus premier = candidats.getFirst();
             premier.setActif(false);
             premier.setStateProcString("a");
             minArrive = premier.getArrive_t();
@@ -127,7 +127,7 @@ class Dispatcher {
         }
 
         int stateLength = 8;
-        int columnWidth = Math.max(maxNameLength, stateLength) + 2;
+        int columnWidth = Math.max(maxNameLength, stateLength) + 7;
 
         StringBuilder header = new StringBuilder();
         header.append(String.format("%-" + columnWidth + "s", "X"));
@@ -218,7 +218,7 @@ class Dispatcher {
 
         File etatFichier = new File(outputFileName);
         String statesData = ecran.lireFile(etatFichier);
-        System.out.println("\n=== Tableau des états (relu depuis le fichier) ===");
+        System.out.println("\n=== Tableau des états (FIFO_IO) ===");
         System.out.print(statesData);
 
         System.out.println("\nOrdonnancement FIFO terminé.");
@@ -282,7 +282,7 @@ class Dispatcher {
         }
 
         int stateLength = 8;
-        int columnWidth = Math.max(maxNameLength, stateLength) + 2;
+        int columnWidth = Math.max(maxNameLength, stateLength) + 7;
 
         StringBuilder header = new StringBuilder();
         header.append(String.format("%-" + columnWidth + "s", "X"));
@@ -357,6 +357,7 @@ class Dispatcher {
                         p.setActif(false);
                         if (!p.isFinished() && !p.isBlocked()) {
                             p.setStateProcString("a");
+                            p.setDesactive(true);
                         }
                     }
                 }
@@ -375,7 +376,7 @@ class Dispatcher {
 
         File etatFichier = new File(outputFileName);
         String statesData = ecran.lireFile(etatFichier);
-        System.out.println("\n=== Tableau des états (relu depuis le fichier) ===");
+        System.out.println("\n=== Tableau des états (FIFO_IO_PRIO) ===");
         System.out.print(statesData);
 
         System.out.println("\nOrdonnancement par priorité terminé.");
@@ -439,7 +440,7 @@ class Dispatcher {
         }
 
         int stateLength = 8;
-        int columnWidth = Math.max(maxNameLength, stateLength) + 2;
+        int columnWidth = Math.max(maxNameLength, stateLength) + 7;
 
         StringBuilder header = new StringBuilder();
         header.append(String.format("%-" + columnWidth + "s", "X"));
@@ -516,6 +517,7 @@ class Dispatcher {
                     } else {
                         if (quantumCounter == maxSteps && !currentProcess.isFinished() && !currentProcess.isBlocked()) {
                             currentProcess.setActif(false);
+                            currentProcess.setDesactive(true);
                             currentProcess.setStateProcString("a");
                             readyQueue.add(currentProcess);
                             currentProcess = null;
@@ -546,7 +548,7 @@ class Dispatcher {
 
         File etatFichier = new File(outputFileName);
         String statesData = ecran.lireFile(etatFichier);
-        System.out.println("\n=== Tableau des états (relu depuis le fichier) ===");
+        System.out.println("\n=== Tableau des états (RR_IO) ===");
         System.out.print(statesData);
     }
 
@@ -606,7 +608,7 @@ class Dispatcher {
         }
 
         int stateLength = 8;
-        int columnWidth = Math.max(maxNameLength, stateLength) + 2;
+        int columnWidth = Math.max(maxNameLength, stateLength) + 7;
 
         StringBuilder header = new StringBuilder();
         header.append(String.format("%-" + columnWidth + "s", "X"));
@@ -656,6 +658,7 @@ class Dispatcher {
                     if (p.getIoLastF_t() == 0) {
                         p.setBlocked(false);
                         p.setStateProcString("a");
+                        p.setDesactive(false);
                         priorityQueues.computeIfAbsent(p.getPriority_l(), k -> new LinkedList<>()).add(p);
                     }
                 }
@@ -682,6 +685,7 @@ class Dispatcher {
                     } else {
                         if (quantumCounter == maxSteps && !currentProcess.isFinished() && !currentProcess.isBlocked()) {
                             currentProcess.setActif(false);
+                            currentProcess.setDesactive(true);
                             currentProcess.setStateProcString("a");
                             priorityQueues.get(currentProcess.getPriority_l()).add(currentProcess);
                             currentProcess = null;
@@ -711,7 +715,7 @@ class Dispatcher {
 
         File etatFichier = new File(outputFileName);
         String statesData = ecran.lireFile(etatFichier);
-        System.out.println("\n=== Tableau des états (relu depuis le fichier) ===");
+        System.out.println("\n=== Tableau des états (RR_IO_PRIO) ===");
         System.out.print(statesData);
     }
 
@@ -720,17 +724,30 @@ class Dispatcher {
         fullLineBuilder.append(String.format("%-" + columnWidth + "s", ts));
         for (int i = 0; i < processusTableau.length; i++) {
             Processus p = processusTableau[i];
+            int executedTime = (int) (p.getTotal_t() - p.getRemain_t());
             String stateStr;
-            if (p.isFinished()) {
+            if (p.isFinished() && !p.isFinishedAff()) {
+                stateStr = "A("  + executedTime + ")->" + p.getStateProcString();
+                p.setFinishedAff(true);
+            } else if (p.isFinished()) {
                 stateStr = p.getStateProcString();
-            } else if (p.getStateProcString().equals("A") && previousStates[i].equals("a")) {
+            /*}else if (p.getStateProcString().equals("A") && previousStates[i].equals("a")) {
                 stateStr = "a->A(0)";
+            }*/
+            }else if (p.getStateProcString().equals("a") && p.isDesactive()) {
+                stateStr = "A(" + executedTime + ")->a";
+                p.setDesactive(false);
+            }else if (p.getStateProcString().equals("A") && previousStates[i].equals("B")) {
+                stateStr = "B->A(" + executedTime + ")";
+            }else if (p.getStateProcString().equals("A") && previousStates[i].equals("a")) {
+                stateStr = "a->A(" + executedTime + ")";
             } else if (p.getStateProcString().equals("a")) {
                 stateStr = "a";
             } else if (p.isBlocked() && previousStates[i].equals("A")) {
-                stateStr = "A->B(0)";
+                stateStr = "A(" + executedTime + ")->B(" + p.getIoLastF_t() + ")";
+            } else if (p.isBlocked()) {
+                stateStr = "B(" + p.getIoLastF_t() + ")";
             } else {
-                int executedTime = (int) (p.getTotal_t() - p.getRemain_t());
                 stateStr = p.getStateProcString() + "(" + executedTime + ")";
             }
 

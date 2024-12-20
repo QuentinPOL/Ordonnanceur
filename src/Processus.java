@@ -12,10 +12,15 @@ class Processus {
 
 	private boolean finished;
 
-	private boolean actif;
-	private boolean arrived;
-	private boolean block;
+	private boolean finishedAff;
 
+	private boolean actif;
+
+	private boolean isDesactive;
+
+	private boolean arrived;
+
+	private boolean block;
 	public void oneTimeSlice(){
 		this.remain_t-=1;
 	}
@@ -33,7 +38,6 @@ class Processus {
 	public void setFinished(boolean finished) {
 		this.finished = finished;
 	}
-
 	public void setArrived(boolean arrived) {
 		this.arrived = arrived;
 	}
@@ -47,11 +51,14 @@ class Processus {
 		this.ioLastF_t = iolast;
 		this.priority_l = prio;
 		this.finished = false;
+		this.finishedAff = false;
+		this.isDesactive = false;
 		this.arrived = false;
 		this.actif = false;
 		this.block = false;
 		this.stateProcString = " ";
 	}
+
 
 	// Constructeur
 	public void setStateProcString(String stateProcString) {
@@ -59,6 +66,22 @@ class Processus {
 	}
 
 	// Getters
+	public boolean isDesactive() {
+		return isDesactive;
+	}
+
+	public void setDesactive(boolean desactive) {
+		isDesactive = desactive;
+	}
+
+	public boolean isFinishedAff() {
+		return finishedAff;
+	}
+
+	public void setFinishedAff(boolean finishedAff) {
+		this.finishedAff = finishedAff;
+	}
+
 	public String getNameProc() {
 		return nameProc;
 	}
