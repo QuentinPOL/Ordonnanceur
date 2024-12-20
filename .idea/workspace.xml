@@ -4,14 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="4450020e-a525-454a-b33c-7c08c9c0b56d" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="4450020e-a525-454a-b33c-7c08c9c0b56d" name="Changes" comment="Avancement">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etat_processus_fifo_prio_io.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/etat_processus_rr_io.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/etat_processus_rr_io_prio.txt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Dispatcher.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/Dispatcher.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Processus.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/Processus.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,6 +16,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "QuentinPOL"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/QuentinPOL/Ordonnanceur",
+    "accountId": "6f3e9a4e-dd04-4c7a-98a9-56a6b7ed67c8"
+  }
+}]]></component>
   <component name="ProjectColorInfo"><![CDATA[{
   "associatedIndex": 6
 }]]></component>
@@ -61,12 +68,25 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1734695359654</updated>
-      <workItem from="1734695360636" duration="15719000" />
+      <workItem from="1734695360636" duration="16711000" />
     </task>
+    <task id="LOCAL-00001" summary="Avancement">
+      <option name="closed" value="true" />
+      <created>1734711623690</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1734711623690</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Avancement" />
+    <option name="LAST_COMMIT_MESSAGE" value="Avancement" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

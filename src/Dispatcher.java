@@ -737,6 +737,7 @@ class Dispatcher {
                         p.setStateProcString("a");
                         priorityQueues.computeIfAbsent(p.getPriority_l(), k -> new LinkedList<>()).add(p);
 
+                        /*
                         if (currentProcess.getPriority_l() > p.getPriority_l()) // Si la priorité du blocage fini est > à celui  actif
                         {
                             currentProcess.setActif(false);
@@ -744,6 +745,7 @@ class Dispatcher {
                             p.setActif(true);
                             p.setStateProcString("A");
                         }
+                        */
                     }
                 }
             }
