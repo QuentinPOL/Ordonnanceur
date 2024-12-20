@@ -208,8 +208,9 @@ class Dispatcher {
                 }
             }
 
-            previousBaseLine = writeStateLine(processusTableau, ts, columnWidth, previousStates, previousBaseLine, outputFileName, ecran);
-
+            //quantumCounter = writeStateLine(processusTableau, ts, columnWidth, previousStates, previousBaseLine, outputFileName, ecran, 1, quantumCounter);
+            String baseLine = buildBaseLine(processusTableau);
+            previousBaseLine = baseLine;
             ts++;
             if (actif != null && !actif.isFinished()) {
                 actif.oneTimeSlice();
@@ -302,13 +303,15 @@ class Dispatcher {
         String previousBaseLine = null;
         String[] previousStates = new String[processusTableau.length];
         Arrays.fill(previousStates, "");
-
+        int quantumCounter = 0;
         int ts = startTime;
         while (!allProcessesFinished(processusTableau) && ts < startTime + 300) {
             for (Processus p : processusTableau) {
                 if (p.isActif() && p.getRemain_t() > 0) {
                     p.oneTimeSlice();
-                    if (p.getRemain_t() == 0) {
+                    quantumCounter++;
+                    if (p.getRemain_t() == 0 && !p.isFinished()) {
+                        quantumCounter=0;
                         p.setActif(false);
                         p.setFinished(true);
                         p.setStateProcString("X");
@@ -328,6 +331,7 @@ class Dispatcher {
                         && p.getIoLastF_t() != 0) {
                     p.setActif(false);
                     p.setBlocked(true);
+                    quantumCounter=0;
                     p.setStateProcString("B");
                 }
 
@@ -364,8 +368,12 @@ class Dispatcher {
                 plusImportant2.setStateProcString("A");
                 plusImportant2.setArrived(true);
             }
-
-            previousBaseLine = writeStateLine(processusTableau, ts, columnWidth, previousStates, previousBaseLine, outputFileName, ecran);
+            if (ts == 350) {
+                System.out.println("");
+            }
+            writeStateLine(processusTableau, ts, columnWidth, previousStates, previousBaseLine, outputFileName, ecran, 1, quantumCounter);
+            String baseLine = buildBaseLine(processusTableau);
+            previousBaseLine = baseLine;
             ts++;
         }
 
@@ -535,8 +543,9 @@ class Dispatcher {
                     quantumCounter = 0;
                 }
             }
-
-            previousBaseLine = writeStateLine(processusTableau, ts, columnWidth, previousStates, previousBaseLine, outputFileName, ecran);
+            writeStateLine(processusTableau, ts, columnWidth, previousStates, previousBaseLine, outputFileName, ecran, 1, quantumCounter);
+            String baseLine = buildBaseLine(processusTableau);
+            previousBaseLine = baseLine;
             ts++;
         }
 
@@ -701,7 +710,11 @@ class Dispatcher {
                 }
             }
 
-            previousBaseLine = writeStateLine(processusTableau, ts, columnWidth, previousStates, previousBaseLine, outputFileName, ecran);
+
+
+            writeStateLine(processusTableau, ts, columnWidth, previousStates, previousBaseLine, outputFileName, ecran, 1, quantumCounter);
+            String baseLine = buildBaseLine(processusTableau);
+            previousBaseLine = baseLine;
             ts++;
         }
 
@@ -732,9 +745,9 @@ class Dispatcher {
             }else if (p.getStateProcString().equals("a") && previousStates[i].equals("A")) {
                 stateStr = "A(" + executedTime + ")->a";
             } else if (p.isBlocked() && previousStates[i].equals("A")) {
-                stateStr = "A(" + executedTime + ")->B(" + p.getIoLastF_t() + ")";
+                stateStr = "A(" + executedTime + ")->B(" + (int)p.getIoLastF_t() + ")";
             } else if (p.isBlocked()) {
-                stateStr = "B(" + p.getIoLastF_t() + ")";
+                stateStr = "B(" + (int)p.getIoLastF_t() + ")";
             }else if (p.getStateProcString().equals("a") && previousStates[i].equals("B")) {
                 stateStr = "B->a(" + executedTime + ")";
             }else if (p.getStateProcString().equals("A") && previousStates[i].equals("B")) {
@@ -755,17 +768,34 @@ class Dispatcher {
         return fullLineBuilder.toString();
     }
 
-    private static String writeStateLine(Processus[] processusTableau, int ts, int columnWidth, String[] previousStates,
-                                         String previousBaseLine, String outputFileName, IOCommandes ecran) {
+    private static int writeStateLine(Processus[] processusTableau, int ts, int columnWidth, String[] previousStates,
+                                      String previousBaseLine, String outputFileName, IOCommandes ecran, int usingOrdoType, int pas) {
         String baseLine = buildBaseLine(processusTableau);
         String fullLine = buildStateLine(processusTableau, ts, columnWidth, previousStates);
 
-        if (!baseLine.equals(previousBaseLine) || ts % 10 == 0) {
-            ecran.ecrireFile(outputFileName, fullLine);
-            return baseLine;
+        switch (usingOrdoType) {
+            case 1:
+                // On écrit si changement d'état ou pas == 10
+                if (!baseLine.equals(previousBaseLine) || pas == 10) {
+                    ecran.ecrireFile(outputFileName, fullLine);
+                    // Si on a atteint 10, on réinitialise pas
+                    if (pas == 10) {
+                        pas = 0;
+                    }
+                }
+                break;
+
+            default:
+                // Écriture si changement d'état ou ts multiple de 10
+                if (!baseLine.equals(previousBaseLine) || ts % 10 == 0) {
+                    ecran.ecrireFile(outputFileName, fullLine);
+                }
+                break;
         }
-        return baseLine;
+
+        return pas;
     }
+
 
     private static boolean allProcessesFinished(Processus[] processusTableau) {
         for (Processus p : processusTableau) {
