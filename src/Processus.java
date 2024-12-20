@@ -1,6 +1,13 @@
 //Nomprocessus	DateArrive	DureeExecution	DateDebutIO	DureeIO	Priorite
 
 class Processus {
+	// Attributs d'origine pour la réinitialisation
+	private final float originalArrive_t;
+	private final float originalRemain_t;
+	private final float originalIoAt_t;
+	private final float originalIoLastF_t;
+	private final int originalPriority_l;
+
 
 	// Attributs
 	private String nameProc;
@@ -54,8 +61,30 @@ class Processus {
 		this.actif = false;
 		this.block = false;
 		this.stateProcString = " ";
+
+		// Initialisation des valeurs d'origine
+		this.originalArrive_t = ar;
+		this.originalRemain_t = rt;
+		this.originalIoAt_t = iot;
+		this.originalIoLastF_t = iolast;
+		this.originalPriority_l = prio;
 	}
 
+	// Méthode de réinitialisation
+	public void reset() {
+		this.arrive_t = originalArrive_t;
+		this.remain_t = originalRemain_t;
+		this.total_t = originalRemain_t;
+		this.ioAt_t = originalIoAt_t;
+		this.ioLastF_t = originalIoLastF_t;
+		this.priority_l = originalPriority_l;
+
+		this.finished = false;
+		this.arrived = false;
+		this.actif = false;
+		this.block = false;
+		this.stateProcString = " ";
+	}
 
 	// Constructeur
 	public void setStateProcString(String stateProcString) {
@@ -63,8 +92,6 @@ class Processus {
 	}
 
 	// Getters
-
-
 	public String getNameProc() {
 		return nameProc;
 	}

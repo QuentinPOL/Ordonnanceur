@@ -8,8 +8,8 @@ import javax.swing.table.DefaultTableModel;
 
 class Dispatcher {
 
-    private static Processus[] processusTableau; // Attribut de classe pour le tableau de processus
-    private static JTextArea outputFileArea; // Zone pour afficher le fichier de sortie
+    private static Processus[] processusTableau = null; // Attribut de classe pour le tableau de processus
+    private static JTextArea outputFileArea = null; // Zone pour afficher le fichier de sortie
 
     private static String buildBaseLine(Processus[] processusTableau) {
         StringBuilder baseLineBuilder = new StringBuilder();
@@ -44,11 +44,14 @@ class Dispatcher {
         // Zone pour afficher le contenu du fichier sélectionné
         JTextArea fileContentArea = new JTextArea();
         fileContentArea.setEditable(false);
+        Font monospaceFont = new Font("Monospaced", Font.PLAIN, 12); // Police monospace
+        fileContentArea.setFont(monospaceFont);
         JScrollPane fileContentScrollPane = new JScrollPane(fileContentArea);
 
         // Zone pour afficher le fichier de sortie
         outputFileArea = new JTextArea();
         outputFileArea.setEditable(false);
+        outputFileArea.setFont(monospaceFont); // Police monospace
         JScrollPane outputFileScrollPane = new JScrollPane(outputFileArea);
 
         // SplitPane pour afficher les deux zones côte à côte
@@ -76,7 +79,8 @@ class Dispatcher {
                 "FIFO sans I/O sans priorité",
                 "FIFO avec priorité et I/O",
                 "Round Robin sans priorité",
-                "Round Robin avec priorité"
+                "Round Robin avec priorité",
+                "Files Rétroactives"
         };
         JComboBox<String> schedulingComboBox = new JComboBox<>(schedulingOptions);
         JButton startSchedulingButton = new JButton("Démarrer Ordonnancement");
@@ -98,7 +102,7 @@ class Dispatcher {
                 return;
             }
 
-            File selectedFile = new File("./files/" + selectedFileName);
+            File selectedFile = new File("./files/" + selectedFileName); // Vérifiez le chemin
             try {
                 String data = ecran.lireFile(selectedFile);
                 fileContentArea.setText(data);
@@ -122,35 +126,83 @@ class Dispatcher {
             int schedulingChoice = schedulingComboBox.getSelectedIndex() + 1;
             String outputFileName = ""; // Nom du fichier de sortie
 
-            switch (schedulingChoice) {
-                case 1:
-                    outputFileName = ordonnancementFIFOWithoutIONoPriority(processusTableau, ecran);
-                    break;
-                case 2:
-                    outputFileName = ordonnancementIOPriority(processusTableau, ecran);
-                    break;
-                case 3:
-                    outputFileName = ordonnancementRoundRobinWithIONoPriority(processusTableau, ecran);
-                    break;
-                case 4:
-                    outputFileName = ordonnancementRoundRobinWithIOPriority(processusTableau, ecran);
-                    break;
-                default:
-                    JOptionPane.showMessageDialog(frame, "Choix d'ordonnancement invalide.", "Erreur", JOptionPane.ERROR_MESSAGE);
-                    return;
-            }
-
-            // Lire et afficher le fichier de sortie
             try {
+                switch (schedulingChoice) {
+                    case 1:
+                        outputFileName = ordonnancementFIFOWithoutIONoPriority(processusTableau, ecran);
+                        break;
+                    case 2:
+                        outputFileName = ordonnancementIOPriority(processusTableau, ecran);
+                        break;
+                    case 3:
+                        outputFileName = ordonnancementRoundRobinWithIONoPriority(processusTableau, ecran);
+                        break;
+                    case 4:
+                        outputFileName = ordonnancementRoundRobinWithIOPriority(processusTableau, ecran);
+                        break;
+                    default:
+                        JOptionPane.showMessageDialog(frame, "Choix d'ordonnancement invalide.", "Erreur", JOptionPane.ERROR_MESSAGE);
+                        return;
+                }
+
+                resetProcessStates(processusTableau);
+
+                // Lire et afficher le fichier de sortie
                 File outputFile = new File(outputFileName);
                 String resultContent = ecran.lireFile(outputFile);
-                outputFileArea.setText(resultContent);
+
+                // Diviser le contenu en lignes et formater en tableau
+                String[] lines = resultContent.split("\n");
+                String[] headers = lines[0].split("\\s+");
+                String[][] tableData = new String[lines.length - 1][];
+                for (int i = 1; i < lines.length; i++) {
+                    tableData[i - 1] = lines[i].split("\\s+");
+                }
+
+                // Afficher le tableau formaté
+                String formattedTable = formatStateTable(headers, tableData);
+                outputFileArea.setText(formattedTable);
             } catch (Exception ex) {
                 outputFileArea.setText("Erreur lors de la lecture du fichier de sortie : " + ex.getMessage());
             }
         });
 
         frame.setVisible(true);
+    }
+
+    // Méthode pour formater le tableau des états
+    private static String formatStateTable(String[] headers, String[][] data) {
+        StringBuilder tableBuilder = new StringBuilder();
+
+        // Largeur de chaque colonne
+        int columnWidth = 15;
+        String format = "%-" + columnWidth + "s";
+
+        // Ajouter les en-têtes
+        for (String header : headers) {
+            tableBuilder.append(String.format(format, header));
+        }
+        tableBuilder.append("\n");
+
+        // Ajouter une ligne de séparation
+        tableBuilder.append("-".repeat(headers.length * columnWidth)).append("\n");
+
+        // Ajouter les données
+        for (String[] row : data) {
+            for (String cell : row) {
+                tableBuilder.append(String.format(format, cell));
+            }
+            tableBuilder.append("\n");
+        }
+
+        return tableBuilder.toString();
+    }
+
+    // Méthode pour réinitialiser les états des processus
+    private static void resetProcessStates(Processus[] processusTableau) {
+        for (Processus p : processusTableau) {
+            p.reset(); // Réinitialisation complète
+        }
     }
 
     private static int initializeAndPrepareProcesses(Processus[] processusTableau) {
@@ -223,7 +275,7 @@ class Dispatcher {
 
         // Préparer l'en-tête pour l'affichage
         StringBuilder header = new StringBuilder();
-        header.append(String.format("%-" + columnWidth + "s", "X"));
+        header.append(String.format("%-" + columnWidth + "s", "Temps"));
         for (Processus p : processusTableau) {
             header.append(String.format("%-" + columnWidth + "s", p.getNameProc()));
         }
@@ -241,72 +293,87 @@ class Dispatcher {
         String[] previousStates = new String[processusTableau.length];
         Arrays.fill(previousStates, "");
 
+        int quantumCounter = 0;
         int ts = startTime;
         while (!allProcessesFinished(processusTableau) && ts < startTime + 300) {
-            // Activer les processus qui arrivent
+
+            // Étape 1 : Activer les processus qui arrivent au temps actuel
             for (Processus p : processusTableau) {
                 if (p.getArrive_t() == ts && !p.isArrived()) {
-                    p.setArrived(true);
+                    p.setArrived(true); // Marque le processus comme arrivé
                     if (!p.isFinished()) {
-                        p.setStateProcString("a");
+                        p.setStateProcString("a"); // Définit son état à "prêt" ('a')
                     }
                 }
             }
 
-            // Trouver un processus actif
-            Processus actif = null;
+            // Étape 2 : Vérifier s'il y a un processus déjà actif
+            Processus actif = null; // Réinitialise le processus actif
             for (Processus p : processusTableau) {
-                if (p.isActif()) {
+                if (p.isActif()) { // Si un processus est actif, le récupérer
                     actif = p;
                     break;
                 }
             }
 
-            // Si aucun actif, prendre le premier prêt
+            // Étape 3 : Si aucun processus actif, sélectionner le premier processus prêt
             if (actif == null) {
                 for (Processus p : processusTableau) {
-                    if (!p.isFinished() && p.isArrived()) {
+                    if (!p.isFinished() && p.isArrived()) { // Trouver un processus non terminé et prêt
                         actif = p;
                         break;
                     }
                 }
 
                 if (actif != null) {
-                    actif.setActif(true);
-                    actif.setStateProcString("A");
+                    actif.setActif(true); // Activer le processus
+                    actif.setStateProcString("A"); // Mettre son état à actif ('A')
                 }
             }
 
-            // Exécuter le processus actif
+            // Étape 4 : Exécuter le processus actif (si un existe)
             if (actif != null) {
+                // Vérifie si le processus est terminé
                 if (actif.getRemain_t() == 0) {
-                    actif.setActif(false);
-                    actif.setFinished(true);
-                    actif.setStateProcString("X");
+                    quantumCounter = 0;
+                    actif.setActif(false); // Désactiver le processus
+                    actif.setFinished(true); // Marque le processus comme terminé
+                    actif.setStateProcString("X"); // Change son état à terminé ('X')
 
-                    // Chercher un autre prêt
+                    // Chercher un autre processus prêt à exécuter
                     Processus suivant = null;
                     for (Processus p : processusTableau) {
-                        if (!p.isFinished() && p.isArrived()) {
+                        if (!p.isFinished() && p.isArrived()) { // Trouver un processus non terminé et prêt
                             suivant = p;
                             break;
                         }
                     }
 
                     if (suivant != null) {
-                        suivant.setActif(true);
-                        suivant.setStateProcString("A");
-                        // pas de "continue;" nécessaire car on va passer au writeStateLine plus bas
+                        suivant.setActif(true); // Activer le prochain processus
+                        suivant.setStateProcString("A"); // Mettre son état à actif ('A')
+                        actif = suivant; // Mettre à jour l'actif
                     }
                 }
             }
 
-            //quantumCounter = writeStateLine(processusTableau, ts, columnWidth, previousStates, previousBaseLine, outputFileName, ecran, 1, quantumCounter);
+            // Étape 5 : Enregistrer l'état des processus
+            quantumCounter = writeStateLine(
+                    processusTableau, ts, columnWidth, previousStates, previousBaseLine,
+                    outputFileName, ecran, 1, quantumCounter
+            ); // Enregistre l'état actuel des processus dans un fichier
+
+            // Mettre à jour la ligne de base des états pour détecter les changements
             String baseLine = buildBaseLine(processusTableau);
             previousBaseLine = baseLine;
+
+            // Avancer le temps
             ts++;
+
+            // Étape 6 : Réduire le temps restant pour le processus actif
             if (actif != null && !actif.isFinished()) {
-                actif.oneTimeSlice();
+                actif.oneTimeSlice(); // Réduit d'un quantum le temps restant
+                quantumCounter++; // Incrémente le compteur de quantum
             }
         }
 
@@ -346,7 +413,7 @@ class Dispatcher {
 
         // Préparer l'en-tête pour l'affichage
         StringBuilder header = new StringBuilder();
-        header.append(String.format("%-" + columnWidth + "s", "X"));
+        header.append(String.format("%-" + columnWidth + "s", "Temps"));
         for (Processus p : processusTableau) {
             header.append(String.format("%-" + columnWidth + "s", p.getNameProc()));
         }
@@ -479,7 +546,7 @@ class Dispatcher {
 
         // Préparer l'en-tête pour l'affichage
         StringBuilder header = new StringBuilder();
-        header.append(String.format("%-" + columnWidth + "s", "X"));
+        header.append(String.format("%-" + columnWidth + "s", "Temps"));
         for (Processus p : processusTableau) {
             header.append(String.format("%-" + columnWidth + "s", p.getNameProc()));
         }
@@ -647,6 +714,11 @@ class Dispatcher {
         Arrays.fill(previousStates, "");
 
         while (!allProcessesFinished(processusTableau) && ts < startTime + 300) {
+            // Débogage : point de contrôle pour vérifier les valeurs à un temps spécifique
+            if (ts == 317) {
+                System.out.println(""); // Ajoute un point de pause pour inspection
+            }
+
             // Arrivée de nouveaux processus
             for (Processus p : processusTableau) {
                 if ((int) p.getArrive_t() == ts && !p.isArrived()) {
@@ -664,9 +736,19 @@ class Dispatcher {
                         p.setBlocked(false);
                         p.setStateProcString("a");
                         priorityQueues.computeIfAbsent(p.getPriority_l(), k -> new LinkedList<>()).add(p);
+
+                        if (currentProcess.getPriority_l() > p.getPriority_l()) // Si la priorité du blocage fini est > à celui  actif
+                        {
+                            currentProcess.setActif(false);
+                            currentProcess.setStateProcString("a");
+                            p.setActif(true);
+                            p.setStateProcString("A");
+                        }
                     }
                 }
             }
+
+
 
             // Exécution du processus courant
             if (currentProcess != null && currentProcess.isActif()) {
@@ -686,14 +768,12 @@ class Dispatcher {
                         currentProcess.setStateProcString("B");
                         currentProcess = null;
                         quantumCounter = 0;
-                    } else {
-                        if (quantumCounter == maxSteps && !currentProcess.isFinished() && !currentProcess.isBlocked()) {
-                            currentProcess.setActif(false);
-                            currentProcess.setStateProcString("a");
-                            priorityQueues.get(currentProcess.getPriority_l()).add(currentProcess);
-                            currentProcess = null;
-                            quantumCounter = 0;
-                        }
+                    } else if (quantumCounter == maxSteps) {
+                        currentProcess.setActif(false);
+                        currentProcess.setStateProcString("a");
+                        priorityQueues.get(currentProcess.getPriority_l()).add(currentProcess);
+                        currentProcess = null;
+                        quantumCounter = 0;
                     }
                 }
             }
@@ -707,7 +787,6 @@ class Dispatcher {
                     quantumCounter = 0;
                 }
             }
-
 
 
             writeStateLine(processusTableau, ts, columnWidth, previousStates, previousBaseLine, outputFileName, ecran, 1, quantumCounter);
